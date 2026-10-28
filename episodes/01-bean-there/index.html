@@ -34,10 +34,11 @@
 </div>
 <script src="../../lib/gsap.min.js"></script>
 <script src="../../lib/characters.js"></script>
+<script src="../../lib/timeline.js"></script>
 <script>
 /* ------------------------------------------------------------------ *
  * Pause - Episode 01: "Bean There"
- * Kuwolskii (rig "lk") and Kolurin (rig "ck") land in a broken café
+ * Kolurin (rig "lk") and Kuwolskii (rig "ck") land in a broken café
  * website and rebuild it.
  * Everything is one paused GSAP timeline, so any frame can be rendered
  * deterministically with renderAt(t) (see tools/render.js).
@@ -285,7 +286,8 @@ function el(tag, attrs, parent) {
   return n;
 }
 const O = { svgOrigin: "0 0" };
-const tl = gsap.timeline({ paused: true });
+// characters at 20 fps, everything else smooth (lib/timeline.js)
+const { tl, renderAt: seek, step } = PauseTimeline.create();
 
 function mouth(who, name, t) {
   document.querySelectorAll(`[id^="${who}-mouth-"]`).forEach((m) =>
@@ -599,8 +601,9 @@ tl.to("#lk-head", { y: -4, duration: 1.1, repeat: 1, yoyo: true, ease: "sine.inO
 
 /* ------------------------------ playback ------------------------------ */
 const noise = document.getElementById("pencilNoise");
-function boil(t) { noise.setAttribute("seed", 1 + (Math.floor(t * 8) % 4)); }
-window.renderAt = (t) => { tl.time(t, false); boil(t); };
+// line boil changes every other character frame (10 fps)
+function boil(t) { noise.setAttribute("seed", 1 + (Math.floor(step(t) * 10 + 1e-6) % 4)); }
+window.renderAt = (t) => { seek(t); boil(t); };
 window.DURATION = DURATION;
 
 const params = new URLSearchParams(location.search);

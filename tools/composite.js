@@ -15,7 +15,7 @@ const fs = require("fs"), os = require("os"), path = require("path");
 
 const args = process.argv.slice(2);
 const fpsAt = args.indexOf("--fps");
-const fps = fpsAt >= 0 ? +args.splice(fpsAt, 2)[1] : 24;
+const fps = fpsAt >= 0 ? +args.splice(fpsAt, 2)[1] : 60; // characters stay at 20 fps; the plate keeps its own rate
 const [shot, plate, out] = args.map((a) => path.resolve(a));
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pause-layer-"));
 

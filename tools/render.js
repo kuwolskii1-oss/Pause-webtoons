@@ -4,6 +4,9 @@
  *
  *   node tools/render.js episodes/01-bean-there [out.mp4] [--fps 30]
  *
+   Default 60 fps output: characters animate at 20 fps (each pose held 3
+ *   frames), everything else updates every frame. See lib/timeline.js.
+ *
  * Opens the episode's index.html with ?render, steps the GSAP timeline with
  * window.renderAt(t) and pipes 1080x1920 screenshots into ffmpeg.
  * Needs Playwright (with Chromium) and ffmpeg on the PATH.
@@ -14,7 +17,7 @@ const path = require("path");
 
 const args = process.argv.slice(2);
 const fpsAt = args.indexOf("--fps");
-const fps = fpsAt >= 0 ? +args.splice(fpsAt, 2)[1] : 30;
+const fps = fpsAt >= 0 ? +args.splice(fpsAt, 2)[1] : 60; // 60 = each 20 fps character frame held exactly 3 frames
 const dir = path.resolve(args[0] || "episodes/01-bean-there");
 const out = path.resolve(args[1] || path.join(dir, path.basename(dir) + ".mp4"));
 

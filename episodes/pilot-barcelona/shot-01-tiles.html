@@ -15,8 +15,9 @@
 <svg id="stage" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
 <script src="../../lib/gsap.min.js"></script>
 <script src="../../lib/characters.js"></script>
+<script src="../../lib/timeline.js"></script>
 <script>
-/* Pilot, shot 01 (0:18): Kuwolskii and Kolurin land on the Passeig de Gràcia
+/* Pilot, shot 01 (0:18): Kolurin and Kuwolskii land on the Passeig de Gràcia
  * tiles. Cartoon layer only - tools/composite.js lays it over the Veo plate
  * plates/barcelona/video/bcn1-tiles-veo.mp4. */
 const C = PauseCharacters, INK = C.INK, PAPER = C.PAPER;
@@ -51,7 +52,8 @@ svg.innerHTML = `
 
 const $ = (s) => document.querySelector(s);
 const O = { svgOrigin: "0 0" };
-const tl = gsap.timeline({ paused: true });
+// characters at 20 fps, everything else smooth (lib/timeline.js)
+const { tl, renderAt: seek, step } = PauseTimeline.create();
 function el(tag, attrs, parent) {
   const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
   for (const k in attrs) n.setAttribute(k, attrs[k]);
@@ -98,7 +100,7 @@ mouth("ck", "o", 1.75);
 mouth("ck", "grin", 2.6);
 tl.set("#title", { opacity: 1 }, 2.6)
   .fromTo("#title", { ...O, svgOrigin: "540 400", scale: 0.3, rotation: -8 }, { svgOrigin: "540 400", scale: 1, rotation: -4, duration: 0.4, ease: "back.out(2.5)", immediateRender: false }, 2.6);
-// Kolurin's finger gun at the sky
+// Kuwolskii's finger gun at the sky
 gun(true, 3.0);
 tl.to("#ck-armR", { ...O, rotation: 200, duration: 0.25, ease: "back.out(2)" }, 2.95)
   .to("#ck-armR", { ...O, rotation: 212, duration: 0.06 }, 3.4)
@@ -112,7 +114,7 @@ tl.to({}, { duration: 0.01 }, DURATION - 0.01);
 
 const noise = document.getElementById("pencilNoise");
 window.DURATION = DURATION;
-window.renderAt = (t) => { tl.time(t, false); noise.setAttribute("seed", 1 + (Math.floor(t * 8) % 4)); };
+window.renderAt = (t) => { seek(t); noise.setAttribute("seed", 1 + (Math.floor(step(t) * 10 + 1e-6) % 4)); };
 window.ready = document.fonts.ready.then(() => {
   if (new URLSearchParams(location.search).has("render")) { document.body.classList.add("render"); renderAt(0); return; }
   let t0 = performance.now();
