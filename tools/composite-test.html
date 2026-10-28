@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#000}</style></head><body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<script src="../lib/characters.js"></script>
+<script>
+// Still test: the cast composited onto a real Barcelona plate.
+// ?plate=bcn1-tiles|bcn1-gaudi
+const C = PauseCharacters, q = new URLSearchParams(location.search);
+const plate = q.get("plate") || "bcn1-tiles";
+const shots = {
+  "bcn1-tiles": { lk: [360, 1700, 1.15], ck: [760, 1640, 1.05], skew: -1.1, flat: 0.28, sh: 0.6 },
+  "bcn1-gaudi": { lk: [380, 1830, 0.78], ck: [700, 1800, 0.74], skew: -0.5, flat: 0.22, sh: 0.32 },
+}[plate];
+const contact = ([x, y, s]) => `<ellipse cx="${x + 10 * s}" cy="${y + 4}" rx="${165 * s}" ry="${20 * s}" fill="#120c06" opacity=".55" filter="url(#soft)"/>`;
+const fig = (id, [x, y, s]) => `<g transform="translate(${x},${y}) scale(${s})"><use href="#${id}"/></g>`;
+const shadow = (id, [x, y, s]) => `<g transform="translate(${x},${y}) matrix(1,0,${shots.skew},${shots.flat},0,0) scale(${s})" filter="url(#shadow)" opacity="${shots.sh}"><use href="#${id}"/></g>`;
+document.getElementById("s").innerHTML = `<defs>${C.defs}
+  <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="shadow"><feFlood flood-color="#1b1208"/><feComposite in2="SourceAlpha" operator="in"/><feGaussianBlur stdDeviation="3"/></filter>
+  <filter id="sunlit" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence id="pencilNoise" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feColorMatrix in="d" type="matrix" values="1.04 0 0 0 0.02  0 0.97 0 0 0.01  0 0 0.86 0 0  0 0 0 1 0" result="warm"/>
+    <feComponentTransfer in="warm"><feFuncR type="gamma" exponent="1.05"/><feFuncG type="gamma" exponent="1.05"/><feFuncB type="gamma" exponent="1.08"/></feComponentTransfer>
+  </filter>
+  <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="9"/>
+    <feColorMatrix values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .5 0"/></filter>
+  <g id="lk">${C.locs("lk0", 1)}</g><g id="ck">${C.cap("ck0", 1)}</g>
+</defs>
+<image href="../plates/barcelona/${plate}.png" width="1080" height="1920" preserveAspectRatio="xMidYMid slice"/>
+${shadow("lk", shots.lk)}${shadow("ck", shots.ck)}${contact(shots.lk)}${contact(shots.ck)}
+<g filter="url(#sunlit)">${fig("lk", shots.lk)}${fig("ck", shots.ck)}</g>
+<rect width="1080" height="1920" filter="url(#grain)" opacity=".12" style="mix-blend-mode:overlay"/>`;
+// poses
+const set = (id, t) => document.getElementById(id).setAttribute("transform", t);
+set("lk0-armL", "rotate(-4)"); set("lk0-armR", "rotate(4)");
+set("ck0-armL", "rotate(-6)");
+if (plate === "bcn1-gaudi") {           // both looking up at the facade, Kolurin pointing
+  set("lk0-head", "rotate(-6)"); set("ck0-head", "rotate(-10)");
+  set("ck0-armR", "rotate(208)"); document.getElementById("ck0-handR").setAttribute("opacity", 0);
+  document.getElementById("ck0-gun").setAttribute("opacity", 1);
+  document.getElementById("lk0-brows").setAttribute("transform", "translate(0,-8)");
+  document.getElementById("lk0-mouth-frown").setAttribute("opacity", 0);
+  document.getElementById("lk0-mouth-smirk").setAttribute("opacity", 1);
+  ["lk0-pupilL", "lk0-pupilR"].forEach((p) => document.getElementById(p).setAttribute("transform", "translate(0,-5)"));
+  document.getElementById("ck0-mouth-smirk").setAttribute("opacity", 0);
+  document.getElementById("ck0-mouth-o").setAttribute("opacity", 1);
+} else {
+  set("ck0-armR", "rotate(6)");
+}
+</script></body></html>
