@@ -2,7 +2,7 @@
 /*
  * Render an episode to MP4, frame by frame.
  *
- *   node tools/render.js episodes/01-bean-there [out.mp4] [--fps 30]
+ *   node tools/render.js episodes/01-bean-there [out.mp4] [--fps 30] [--query k=v&k2=v2]
  *
    Default 60 fps output: characters animate at 20 fps (each pose held 3
  *   frames), everything else updates every frame. See lib/timeline.js.
@@ -18,6 +18,8 @@ const path = require("path");
 const args = process.argv.slice(2);
 const fpsAt = args.indexOf("--fps");
 const fps = fpsAt >= 0 ? +args.splice(fpsAt, 2)[1] : 60; // 60 = each 20 fps character frame held exactly 3 frames
+const qAt = args.indexOf("--query");
+const query = qAt >= 0 ? "&" + args.splice(qAt, 2)[1] : "";
 const dir = path.resolve(args[0] || "episodes/01-bean-there");
 const out = path.resolve(args[1] || path.join(dir, path.basename(dir) + ".mp4"));
 
@@ -25,7 +27,7 @@ const out = path.resolve(args[1] || path.join(dir, path.basename(dir) + ".mp4"))
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   page.on("pageerror", (e) => console.error("page error:", e.message));
-  await page.goto("file://" + path.join(dir, "index.html") + "?render");
+  await page.goto("file://" + path.join(dir, "index.html") + "?render" + query);
   await page.evaluate(() => window.ready);
   await page.waitForTimeout(300);
   const duration = await page.evaluate(() => window.DURATION);

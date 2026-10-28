@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Pause Mark</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>body{margin:0}</style></head><body>
+<svg id="s" viewBox="0 0 1600 560" width="1600" height="560"></svg>
+<script src="../lib/brand.js"></script>
+<script>
+// The three brand-sheet colourways, for checking the redrawn mark.
+const P = PauseBrand.palette;
+const panel = (x, bg, fg, label) => `<rect x="${x}" width="533.3" height="560" fill="${bg}"/>
+  <g transform="translate(${x + 268},250)">${PauseBrand.mark({ color: fg, id: "m" + x })}</g>
+  <text x="${x + 266}" y="438" text-anchor="middle" font-family="DM Mono, monospace" font-size="19" letter-spacing="3.5" fill="${fg === P.paper ? P.paper : "#4a4642"}">${label}</text>`;
+document.getElementById("s").innerHTML =
+  panel(0, P.sketchbook, P.umber, "UMBER ON SKETCHBOOK") +
+  panel(533.3, P.graphite, P.paper, "PAPER ON GRAPHITE") +
+  panel(1066.6, P.sketchbook, P.graphite, "GRAPHITE");
+</script></body></html>
