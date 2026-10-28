@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f6f2ea}</style></head><body>
+<svg id="s" viewBox="0 0 1400 900" width="1400" height="900"></svg>
+<script src="../lib/characters.js"></script>
+<script>
+const C=PauseCharacters, q=new URLSearchParams(location.search);
+document.getElementById('s').innerHTML=`<defs>${C.defs}</defs>
+<g filter="url(#pencil)"><g transform="translate(250,820)">${C.locs('a')}</g>
+<g transform="translate(650,820)">${C.cap('b')}</g>
+<g transform="translate(1100,820)">${C.cap('c')}</g></g>`;
+// third copy: back view + finger gun
+document.getElementById('c-front').setAttribute('opacity',0);
+document.getElementById('c-back').setAttribute('opacity',1);
+document.getElementById('c-headFront').setAttribute('opacity',0);
+document.getElementById('c-headBack').setAttribute('opacity',1);
+document.getElementById('c-armR').setAttribute('transform','rotate(-80)');['a-armL','b-armL','c-armL'].forEach(i=>document.getElementById(i).setAttribute('transform','rotate(-6)'));['a-armR','b-armR'].forEach(i=>document.getElementById(i).setAttribute('transform','rotate(6)'));
+document.getElementById('c-handR').setAttribute('opacity',0);
+document.getElementById('c-gun').setAttribute('opacity',1);
+</script></body></html>

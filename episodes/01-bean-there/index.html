@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pause Ep. 01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=Comic+Neue:wght@700&family=Fraunces:ital,wght@0,700;1,600&family=Inter:wght@500;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #16151a; --fg: #f6f2ea; --muted: #9b98a3; --accent: #ff4d2e; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg: #e9e4da; --fg: #1d1c21; --muted: #6b6872; } }
+  :root[data-theme="light"] { --bg: #e9e4da; --fg: #1d1c21; --muted: #6b6872; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; }
+  .wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
+  #stage { display: block; width: min(100%, calc((100vh - 96px) * 9 / 16)); height: auto; aspect-ratio: 9 / 16; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.35); cursor: pointer; }
+  .controls { display: flex; align-items: center; gap: 10px; width: min(100%, calc((100vh - 96px) * 9 / 16)); }
+  .controls button { font: 700 14px Inter, sans-serif; background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; min-width: 76px; }
+  .controls input { flex: 1; accent-color: var(--accent); }
+  .controls span { font: 500 13px Inter, sans-serif; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+  body.render .wrap { padding: 0; }
+  body.render #stage { width: 1080px; height: 1920px; border-radius: 0; box-shadow: none; }
+  body.render .controls { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <svg id="stage" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="controls">
+    <button id="play">Pause</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline">
+    <span id="clock">0.0s</span>
+  </div>
+</div>
+<script src="../../lib/gsap.min.js"></script>
+<script src="../../lib/characters.js"></script>
+<script>
+/* ------------------------------------------------------------------ *
+ * Pause - Episode 01: "Bean There"
+ * Two CISK kids land in a broken café website and rebuild it.
+ * Everything is one paused GSAP timeline, so any frame can be rendered
+ * deterministically with renderAt(t) (see tools/render.js).
+ * ------------------------------------------------------------------ */
+const C = PauseCharacters;
+const INK = C.INK, PAPER = C.PAPER, ACCENT = "#ff4d2e";
+const FLOOR = 1442;          // page footer top - where the cast stands
+const FREEZE = 16.35;        // the moment the pause button is hit
+const DURATION = 24;
+const svg = document.getElementById("stage");
+
+svg.innerHTML = `
+<defs>
+  ${C.defs}
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/>
+    <feColorMatrix values="0 0 0 0 .1  0 0 0 0 .1  0 0 0 0 .1  0 0 0 .55 0"/>
+  </filter>
+  <filter id="desat"><feColorMatrix id="desatM" type="saturate" values="1"/></filter>
+  <filter id="softShadow" x="-20%" y="-20%" width="140%" height="160%">
+    <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2b1d14" flood-opacity=".18"/>
+  </filter>
+  <clipPath id="pageClip"><rect x="62" y="320" width="956" height="1178" rx="4"/></clipPath>
+  <clipPath id="reveal"><circle id="revealC" cx="720" cy="1110" r="0"/></clipPath>
+  <pattern id="stars" width="70" height="70" patternUnits="userSpaceOnUse">
+    <rect width="70" height="70" fill="#d6ff3d"/>
+    <path d="M18,10 l3,8 8,0 -6,5 2,8 -7,-5 -7,5 2,-8 -6,-5 8,0z" fill="#ff3df2"/>
+    <circle cx="52" cy="48" r="5" fill="#33a1ff"/>
+  </pattern>
+  <pattern id="scan" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="3" fill="#000" opacity=".22"/>
+  </pattern>
+  <pattern id="tapeStripes" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="60" height="60" fill="#ffd400"/><rect width="30" height="60" fill="#1d1c21"/>
+  </pattern>
+  <linearGradient id="shine" x1="0" x2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="heroGlow" cx=".75" cy=".3" r=".7">
+    <stop offset="0" stop-color="#ffd9b0"/><stop offset="1" stop-color="#f7efe3" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<rect width="1080" height="1920" fill="${PAPER}"/>
+<g id="scene" filter="url(#desat)">
+  <!-- sketchbook binding -->
+  <g fill="#d9d2c4" stroke="#bdb5a6" stroke-width="2">
+    ${Array.from({ length: 24 }, (_, i) => `<circle cx="24" cy="${60 + i * 80}" r="9"/>`).join("")}
+  </g>
+  <g id="header" font-family="Permanent Marker, cursive" fill="${INK}">
+    <text x="88" y="150" font-size="44">PAUSE</text>
+    <rect x="236" y="116" width="10" height="40" fill="${ACCENT}"/><rect x="254" y="116" width="10" height="40" fill="${ACCENT}"/>
+    <text x="992" y="150" font-size="30" text-anchor="end" fill="#6b6872">ep. 01 - the café site</text>
+    <path d="M88,176 q200,-10 420,4" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <g id="browser">
+    <g filter="url(#pencil)">
+      <rect x="60" y="250" width="960" height="1250" rx="18" fill="#fff" stroke="${INK}" stroke-width="6"/>
+      <path d="M60,320 L1020,320" stroke="${INK}" stroke-width="5"/>
+      <circle cx="104" cy="285" r="12" fill="${ACCENT}" stroke="${INK}" stroke-width="4"/>
+      <circle cx="142" cy="285" r="12" fill="#ffd400" stroke="${INK}" stroke-width="4"/>
+      <circle cx="180" cy="285" r="12" fill="#6fd17a" stroke="${INK}" stroke-width="4"/>
+      <rect x="230" y="266" width="560" height="38" rx="19" fill="#f1ede5" stroke="${INK}" stroke-width="4"/>
+    </g>
+    <text x="256" y="294" font-family="Inter, sans-serif" font-weight="500" font-size="22" fill="#6b6872">beanthere.cafe</text>
+
+    <g clip-path="url(#pageClip)">
+      <!-- ============ the broken site ============ -->
+      <g id="broken">
+        <rect x="60" y="320" width="960" height="1180" fill="url(#stars)"/>
+        <g id="bTitle">
+          <text x="96" y="530" font-family="Comic Neue, cursive" font-weight="700" font-size="54" fill="#ff1fae" stroke="#fff200" stroke-width="2" transform="rotate(-3 540 520)">WELCOME 2 BEAN THERE CAFE!!!</text>
+        </g>
+        <text x="110" y="600" font-family="Times New Roman, serif" font-size="34" fill="#0018ff" text-decoration="underline">best coffe in town!!!1 (click)</text>
+        <rect x="60" y="630" width="960" height="56" fill="#e3001b"/>
+        <text id="marquee" x="80" y="670" font-family="Comic Neue, cursive" font-weight="700" font-size="32" fill="#fff">*** NOW SERVING COFFEE *** NOW SERVING COFFEE *** NOW SERVING COFFEE *** NOW SERVING COFFEE ***</text>
+        <g font-family="Times New Roman, serif" font-size="20" fill="#555">
+          <rect x="100" y="730" width="320" height="230" fill="#e8e8e8" stroke="#777" stroke-width="3"/>
+          <path d="M116,746 l28,28 m0,-28 l-28,28" stroke="#e3001b" stroke-width="5"/>
+          <text x="156" y="770">img_final_FINAL2.jpg</text>
+          <rect x="520" y="780" width="250" height="190" fill="#e8e8e8" stroke="#777" stroke-width="3"/>
+          <path d="M536,796 l28,28 m0,-28 l-28,28" stroke="#e3001b" stroke-width="5"/>
+          <text x="576" y="820">menu(1).bmp</text>
+        </g>
+        <g id="newBurst" transform="translate(900,560) rotate(12)">
+          <path d="M0,-62 L14,-24 54,-36 30,0 54,36 14,24 0,62 -14,24 -54,36 -30,0 -54,-36 -14,-24Z" fill="#fff200" stroke="#e3001b" stroke-width="5"/>
+          <text x="0" y="12" text-anchor="middle" font-family="Comic Neue, cursive" font-weight="700" font-size="32" fill="#e3001b">NEW!</text>
+        </g>
+        <g transform="rotate(7 760 1060)">
+          <rect x="620" y="1020" width="280" height="80" fill="#c0c0c0" stroke="#fff" stroke-width="5"/>
+          <path d="M620,1100 L900,1100 L900,1020" stroke="#666" stroke-width="5" fill="none"/>
+          <text x="760" y="1072" text-anchor="middle" font-family="Comic Neue, cursive" font-weight="700" font-size="34" fill="#0018ff">CLICK HERE!!</text>
+        </g>
+        <rect x="60" y="1442" width="960" height="60" fill="#808080"/>
+        <text x="90" y="1480" font-family="Comic Neue, cursive" font-weight="700" font-size="24" fill="#fff">visitors: 0000003 | best viewed in Internet Explorer 6</text>
+      </g>
+
+      <!-- ============ the Pause version ============ -->
+      <g id="clean" clip-path="url(#reveal)">
+        <rect x="60" y="320" width="960" height="1180" fill="#f7efe3"/>
+        <rect x="60" y="320" width="960" height="560" fill="url(#heroGlow)"/>
+        <text x="108" y="530" font-family="Fraunces, serif" font-weight="700" font-size="88" fill="#2b1d14">Slow coffee.</text>
+        <text x="108" y="624" font-family="Fraunces, serif" font-style="italic" font-weight="600" font-size="88" fill="#c4502b">Fast website.</text>
+        <text x="110" y="684" font-family="Inter, sans-serif" font-weight="500" font-size="26" fill="#6b5545">Fresh roast daily. Order ahead, skip the line.</text>
+        <g id="cta">
+          <rect x="108" y="722" width="290" height="74" rx="37" fill="#2b1d14"/>
+          <text x="253" y="768" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="26" fill="#f7efe3">Order ahead  →</text>
+        </g>
+        <g id="cup" transform="translate(820,590)">
+          <ellipse cx="0" cy="96" rx="130" ry="26" fill="#e7d6c3"/>
+          <path d="M-90,-10 L90,-10 L74,84 Q70,100 50,100 L-50,100 Q-70,100 -74,84 Z" fill="#fff" stroke="#2b1d14" stroke-width="5"/>
+          <path d="M88,10 q46,4 34,40 q-10,26 -44,22" fill="none" stroke="#2b1d14" stroke-width="10" stroke-linecap="round"/>
+          <ellipse cx="0" cy="-10" rx="90" ry="20" fill="#a86a43" stroke="#2b1d14" stroke-width="5"/>
+          <path d="M-12,-14 q-14,-10 0,-16 q8,-2 12,6 q4,-8 12,-6 q14,6 0,16 l-12,8z" fill="#f7efe3"/>
+          <g id="steam" fill="none" stroke="#c9b29c" stroke-width="7" stroke-linecap="round">
+            <path id="steam1" d="M-30,-50 q-16,-30 0,-60 q16,-30 0,-60"/>
+            <path id="steam2" d="M10,-56 q-16,-30 0,-60 q16,-30 0,-60"/>
+            <path id="steam3" d="M48,-48 q-16,-30 0,-60 q16,-30 0,-60"/>
+          </g>
+        </g>
+        <text x="110" y="910" font-family="Fraunces, serif" font-weight="700" font-size="40" fill="#2b1d14">Today's menu</text>
+        <path d="M110,926 l120,0" stroke="#c4502b" stroke-width="5" stroke-linecap="round"/>
+        <g filter="url(#softShadow)">
+          <rect x="100" y="1210" width="880" height="200" rx="28" fill="#fff"/>
+        </g>
+        <text x="140" y="1270" font-family="Inter, sans-serif" font-weight="700" font-size="28" fill="#2b1d14">Online orders</text>
+        <text x="140" y="1306" font-family="Inter, sans-serif" font-weight="500" font-size="22" fill="#8a7462">this month</text>
+        <path id="chartArea" d="M480,1380 L560,1366 L640,1372 L720,1330 L800,1316 L880,1270 L950,1236 L950,1390 L480,1390 Z" fill="#c4502b" opacity="0"/>
+        <path id="chartLine" d="M480,1380 L560,1366 L640,1372 L720,1330 L800,1316 L880,1270 L950,1236" fill="none" stroke="#c4502b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="chip" opacity="0">
+          <rect x="140" y="1330" width="220" height="50" rx="25" fill="#e9f6ea"/>
+          <text x="250" y="1364" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="24" fill="#2e7d32">↑ going up</text>
+        </g>
+        <rect x="60" y="1442" width="960" height="60" fill="#2b1d14"/>
+        <text x="540" y="1480" text-anchor="middle" font-family="Inter, sans-serif" font-weight="500" font-size="22" fill="#d9c7b3">© Bean There · site by Pause</text>
+      </g>
+
+      <!-- shared objects that physically get moved around -->
+      <g id="nav"><g id="navR">
+        <g id="navBroken">
+          <rect x="-476" y="-38" width="952" height="76" fill="#c0c0c0" stroke="#fff" stroke-width="5"/>
+          <text x="0" y="12" text-anchor="middle" font-family="Comic Neue, cursive" font-weight="700" font-size="32" fill="#0018ff">Home | About Us | Guestbook | Links | Contact</text>
+        </g>
+        <g id="navClean" opacity="0">
+          <rect x="-476" y="-38" width="952" height="76" fill="#fffaf3"/>
+          <path d="M-476,38 L476,38" stroke="#e5d8c8" stroke-width="3"/>
+          <text x="-430" y="12" font-family="Fraunces, serif" font-weight="700" font-size="34" fill="#2b1d14">Bean There.</text>
+          <text x="420" y="10" text-anchor="end" font-family="Inter, sans-serif" font-weight="500" font-size="24" fill="#6b5545">Menu      Visit      Order</text>
+        </g>
+      </g></g>
+      ${[
+        ["#f4c27a", "Croissant", "$3", `<path d="M-70,10 Q-60,-40 0,-44 Q60,-40 70,10 Q40,-6 0,-4 Q-40,-6 -70,10 Z" fill="#d98a3a" stroke="#7a4513" stroke-width="5"/><path d="M-30,-36 l10,34 M0,-42 l0,38 M30,-36 l-10,34" stroke="#7a4513" stroke-width="4"/>`],
+        ["#c9a27c", "Oat latte", "$5", `<circle r="52" fill="#fff" stroke="#5b3a24" stroke-width="5"/><circle r="40" fill="#a86a43"/><path d="M-2,14 q-30,-18 -16,-34 q12,-10 18,4 q6,-14 18,-4 q14,16 -16,34z" fill="#f7efe3"/>`],
+        ["#7d5a44", "House roast", "$16", `<path d="M-40,-50 L40,-50 L52,52 L-52,52 Z" fill="#f2e3cf" stroke="#2b1d14" stroke-width="5"/><ellipse cx="0" cy="6" rx="16" ry="24" fill="#5b3a24"/><path d="M0,-16 q-8,22 0,44" stroke="#f2e3cf" stroke-width="4" fill="none"/>`],
+      ].map(([bg, name, price, art], i) => `
+      <g id="card${i + 1}"><g id="card${i + 1}R">
+        <g id="card${i + 1}Inner">
+          <rect x="-135" y="-115" width="270" height="230" rx="22" fill="#fff" filter="url(#softShadow)"/>
+          <rect x="-135" y="-115" width="270" height="150" rx="22" fill="${bg}"/>
+          <rect x="-135" y="10" width="270" height="25" fill="${bg}"/>
+          <g transform="translate(0,-40)">${art}</g>
+          <text x="-112" y="80" font-family="Inter, sans-serif" font-weight="700" font-size="24" fill="#2b1d14">${name}</text>
+          <text x="112" y="80" text-anchor="end" font-family="Inter, sans-serif" font-weight="500" font-size="24" fill="#8a7462">${price}</text>
+          <g id="card${i + 1}Broken">
+            <rect x="-135" y="-115" width="270" height="230" fill="#e8e8e8" stroke="#777" stroke-width="3"/>
+            <path d="M-118,-98 l26,26 m0,-26 l-26,26" stroke="#e3001b" stroke-width="5"/>
+            <text x="-82" y="-76" font-family="Times New Roman, serif" font-size="20" fill="#555">pic${i + 1}.gif</text>
+          </g>
+        </g>
+      </g></g>`).join("")}
+      <g id="tape"><g id="tapeR">
+        <rect x="-620" y="-34" width="1240" height="68" fill="url(#tapeStripes)" stroke="${INK}" stroke-width="4"/>
+        <rect x="-250" y="-26" width="500" height="52" fill="#ffd400"/>
+        <text x="0" y="14" text-anchor="middle" font-family="Comic Neue, cursive" font-weight="700" font-size="38" fill="#1d1c21">UNDER CONSTRUCTION</text>
+      </g></g>
+      <rect id="shineBar" x="-400" y="320" width="260" height="1180" fill="url(#shine)" transform="skewX(-14)" opacity=".9"/>
+    </g>
+  </g>
+
+  <g id="pauseBtn" opacity="0"><g id="pauseBtnR">
+    <circle r="120" fill="${ACCENT}" stroke="${INK}" stroke-width="8"/>
+    <rect x="-46" y="-56" width="30" height="112" rx="8" fill="#fff" stroke="${INK}" stroke-width="5"/>
+    <rect x="16" y="-56" width="30" height="112" rx="8" fill="#fff" stroke="${INK}" stroke-width="5"/>
+  </g></g>
+</g>
+
+<g id="endcard" opacity="0">
+  <rect width="1080" height="1920" fill="${PAPER}"/>
+  <g fill="#d9d2c4" stroke="#bdb5a6" stroke-width="2">
+    ${Array.from({ length: 24 }, (_, i) => `<circle cx="24" cy="${60 + i * 80}" r="9"/>`).join("")}
+  </g>
+  <g id="crown" transform="translate(540,470)" fill="none" stroke="${INK}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)">
+    <path id="crownPath" d="M-150,90 L-170,-80 L-80,10 L-10,-120 L50,0 L150,-90 L130,90 Z"/>
+    <path id="crownDrip" d="M-150,90 L-150,140 M-40,90 L-40,170 M70,90 L70,130 M130,90 L130,150" stroke-width="10"/>
+    <circle cx="200" cy="-120" r="10" fill="${INK}" stroke="none" class="dot"/>
+    <circle cx="222" cy="-74" r="6" fill="${INK}" stroke="none" class="dot"/>
+    <circle cx="-210" cy="-10" r="7" fill="${INK}" stroke="none" class="dot"/>
+  </g>
+  <g id="wordmark" transform="translate(540,880)">
+    <rect x="-330" y="-140" width="46" height="170" rx="12" fill="${ACCENT}"/>
+    <rect x="-266" y="-140" width="46" height="170" rx="12" fill="${ACCENT}"/>
+    <text x="60" y="26" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="210" fill="${INK}" letter-spacing="-6">Pause</text>
+  </g>
+  <text id="tagline" x="540" y="1000" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="54" fill="${INK}">websites worth stopping for.</text>
+  <g id="ctaEnd">
+    <rect x="270" y="1060" width="540" height="96" rx="48" fill="${INK}"/>
+    <text x="540" y="1122" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="40" fill="${PAPER}">your site's next  →</text>
+  </g>
+</g>
+
+<!-- the cast sits above the scene so it survives the end-card transition -->
+<g id="cast" filter="url(#pencil)">
+  ${C.locs("lk", 0.5)}
+  ${C.cap("ck", 0.5)}
+</g>
+<g id="cursor" opacity="0"><g id="cursorR">
+  <path d="M0,0 L0,92 L22,70 L38,108 L56,100 L40,64 L72,64 Z" fill="#fff" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+</g></g>
+<rect id="selBox" x="0" y="0" width="1" height="1" fill="none" stroke="#1a73e8" stroke-width="5" stroke-dasharray="16 10" opacity="0"/>
+<g id="fx"></g>
+
+<g id="freezeUI" opacity="0">
+  <rect width="1080" height="1920" fill="url(#scan)"/>
+  <g transform="translate(88,236)">
+    <rect x="0" y="-46" width="290" height="70" rx="12" fill="${INK}"/>
+    <rect x="22" y="-32" width="12" height="42" fill="#fff"/><rect x="42" y="-32" width="12" height="42" fill="#fff"/>
+    <text x="74" y="6" font-family="Inter, sans-serif" font-weight="700" font-size="36" fill="#fff" letter-spacing="6">PAUSED</text>
+  </g>
+</g>
+
+<g id="captions" font-family="Bricolage Grotesque, sans-serif" font-weight="800" text-anchor="middle"></g>
+
+<rect id="fade" width="1080" height="1920" fill="#000"/>
+<rect width="1080" height="1920" filter="url(#grain)" opacity=".16" pointer-events="none"/>
+`;
+
+/* ------------------------------ helpers ------------------------------ */
+const $ = (s) => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  (parent || $("#fx")).appendChild(n);
+  return n;
+}
+const O = { svgOrigin: "0 0" };
+const tl = gsap.timeline({ paused: true });
+
+function mouth(who, name, t) {
+  document.querySelectorAll(`[id^="${who}-mouth-"]`).forEach((m) =>
+    tl.set(m, { opacity: m.id === `${who}-mouth-${name}` ? 1 : 0 }, t));
+}
+function land(who, t, power = 1) {
+  tl.to(`#${who}-squash`, { ...O, scaleY: 1 - 0.22 * power, scaleX: 1 + 0.16 * power, duration: 0.07, ease: "power2.out" }, t)
+    .to(`#${who}-squash`, { ...O, scaleY: 1, scaleX: 1, duration: 0.45, ease: "elastic.out(1.1,0.4)" }, t + 0.07);
+}
+function fall(who, x, t, dur = 0.45) {
+  tl.set(`#${who}`, { x, y: -500 }, 0)
+    .to(`#${who}`, { y: FLOOR, duration: dur, ease: "power2.in" }, t)
+    .fromTo(`#${who}-squash`, { ...O, scaleY: 1.18, scaleX: 0.9 }, { ...O, scaleY: 1.18, scaleX: 0.9, duration: dur }, t)
+    .to(`#${who}-legL`, { ...O, rotation: 12, duration: dur * 0.6 }, t)
+    .to(`#${who}-legR`, { ...O, rotation: -12, duration: dur * 0.6 }, t)
+    .to([`#${who}-legL`, `#${who}-legR`], { ...O, rotation: 0, duration: 0.2 }, t + dur);
+  land(who, t + dur, 1.2);
+  dust(x, FLOOR, t + dur);
+}
+function walk(who, fromX, toX, t, dur) {
+  const steps = Math.max(2, Math.round(dur / 0.16));
+  tl.fromTo(`#${who}`, { x: fromX }, { x: toX, duration: dur, ease: "none" }, t);
+  for (let i = 0; i < steps; i++) {
+    const s = i % 2 ? 1 : -1, st = t + (i * dur) / steps, d = dur / steps;
+    tl.to(`#${who}-legL`, { ...O, rotation: 16 * s, duration: d, ease: "sine.inOut" }, st)
+      .to(`#${who}-legR`, { ...O, rotation: -16 * s, duration: d, ease: "sine.inOut" }, st)
+      .to(`#${who}-squash`, { ...O, scaleY: 1.03, duration: d / 2, yoyo: true, repeat: 1, ease: "sine.inOut" }, st);
+  }
+  tl.to([`#${who}-legL`, `#${who}-legR`], { ...O, rotation: 0, duration: 0.12 }, t + dur);
+}
+function dust(x, y, t) {
+  for (let i = 0; i < 7; i++) {
+    const s = i % 2 ? 1 : -1, c = el("circle", { cx: x, cy: y - 6, r: 10 + (i % 3) * 5, fill: PAPER, stroke: INK, "stroke-width": 4, opacity: 0 });
+    tl.set(c, { opacity: 1 }, t)
+      .fromTo(c, { attr: { cx: x + s * 20, cy: y - 6 } }, { attr: { cx: x + s * (70 + i * 14), cy: y - 20 - (i % 3) * 16 }, duration: 0.5, ease: "power2.out" }, t)
+      .to(c, { attr: { r: 0 }, duration: 0.5, ease: "power2.in" }, t);
+  }
+}
+function impact(x, y, t, size = 80, color = INK) {
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + 0.3, cx = Math.cos(a), sy = Math.sin(a);
+    const l = el("line", { x1: x + cx * size * 0.35, y1: y + sy * size * 0.35, x2: x + cx * size * 0.4, y2: y + sy * size * 0.4, stroke: color, "stroke-width": 7, "stroke-linecap": "round", opacity: 0 });
+    tl.set(l, { opacity: 1 }, t)
+      .to(l, { attr: { x1: x + cx * size * 0.8, y1: y + sy * size * 0.8, x2: x + cx * size * 1.25, y2: y + sy * size * 1.25 }, duration: 0.28, ease: "power3.out" }, t)
+      .to(l, { opacity: 0, duration: 0.12 }, t + 0.2);
+  }
+}
+function sfx(text, x, y, t, { size = 64, rot = -8, color = INK, hold = 0.55 } = {}) {
+  const o = el("g", { transform: `translate(${x},${y})` }), g = el("g", { opacity: 0 }, o);
+  el("text", { x: 0, y: 0, "text-anchor": "middle", "font-family": "Permanent Marker, cursive", "font-size": size, fill: color, stroke: PAPER, "stroke-width": 12, "paint-order": "stroke", "stroke-linejoin": "round" }, g).textContent = text;
+  tl.set(g, { opacity: 1, rotation: rot, ...O }, t)
+    .fromTo(g, { ...O, scale: 0.2 }, { ...O, scale: 1, duration: 0.3, ease: "back.out(3)" }, t)
+    .to(g, { opacity: 0, duration: 0.25 }, t + hold);
+}
+// the "///" lines from the sketch
+function gunLines(x, y, t, hold = 0.6, rot = 0) {
+  const o = el("g", { transform: `translate(${x},${y})` }), g = el("g", { opacity: 0 }, o);
+  for (let i = 0; i < 3; i++) el("path", { d: `M${i * 16},0 l-10,-34`, stroke: INK, "stroke-width": 7, "stroke-linecap": "round" }, g);
+  tl.set(g, { opacity: 1, rotation: rot, ...O }, t)
+    .fromTo(g, { ...O, scale: 0.3 }, { ...O, scale: 1, duration: 0.2, ease: "back.out(3)" }, t)
+    .to(g, { opacity: 0, duration: 0.15 }, t + hold);
+}
+let capIndex = 0;
+function caption(text, t, until) {
+  const g = el("g", { opacity: 0 }, $("#captions"));
+  const w = Math.max(320, text.length * 29 + 90);
+  el("rect", { x: 540 - w / 2, y: 1620, width: w, height: 96, rx: 48, fill: INK }, g);
+  el("text", { x: 540, y: 1684, "font-size": 50, fill: PAPER }, g).textContent = text;
+  tl.set(g, { opacity: 1 }, t)
+    .fromTo(g, { ...O, svgOrigin: "540 1668", scale: 0.6 }, { svgOrigin: "540 1668", scale: 1, duration: 0.35, ease: "back.out(2.5)" }, t)
+    .to(g, { opacity: 0, duration: 0.15 }, until);
+  capIndex++;
+}
+function shake(sel, t, amt = 10, dur = 0.3) {
+  tl.to(sel, { x: `+=${amt}`, duration: dur / 6, yoyo: true, repeat: 5, ease: "none" }, t);
+}
+function gun(on, t) { tl.set("#ck-handR", { opacity: on ? 0 : 1 }, t).set("#ck-gun", { opacity: on ? 1 : 0 }, t); }
+
+/* ------------------------------ setup ------------------------------ */
+tl.set("#fade", { opacity: 1 }, 0)
+  .set(["#lk-armL", "#ck-armL"], { ...O, rotation: -4 }, 0)
+  .set(["#lk-armR", "#ck-armR"], { ...O, rotation: 4 }, 0)
+  .set("#nav", { x: 230, y: 1396 }, 0).set("#navR", { ...O, rotation: -12, scale: 0.55 }, 0)
+  .set("#card1", { x: 560, y: 1372 }, 0).set("#card1R", { ...O, rotation: 84, scale: 0.85 }, 0)
+  .set("#card2", { x: 660, y: 880 }, 0).set("#card2R", { ...O, rotation: 22, scale: 1.25 }, 0)
+  .set("#card3", { x: 900, y: 460 }, 0).set("#card3R", { ...O, rotation: -14, scale: 0.42 }, 0)
+  .set("#tape", { x: 540, y: 1170 }, 0).set("#tapeR", { ...O, rotation: -7 }, 0)
+  .set("#pauseBtn", { x: 540, y: -200 }, 0)
+  .set("#cursor", { x: 1180, y: 760 }, 0)
+  .set("#revealC", { attr: { r: 0 } }, 0)
+  .set("#chartLine", { attr: { "stroke-dasharray": 700, "stroke-dashoffset": 700 } }, 0)
+  .set("#shineBar", { x: 0 }, 0);
+
+// ambient loops - all of them stop at the freeze frame
+const loop = (d) => Math.floor(FREEZE / d) - 1;
+tl.fromTo("#marquee", { x: 0 }, { x: -520, duration: 2.6, ease: "none", repeat: 2 }, 0)
+  .to("#newBurst", { opacity: 0.25, duration: 0.2, repeat: 15, yoyo: true, ease: "steps(1)" }, 0)
+  .fromTo("#bTitle", { ...O, svgOrigin: "540 520", rotation: -2 }, { svgOrigin: "540 520", rotation: 2, duration: 0.5, repeat: 13, yoyo: true, ease: "sine.inOut" }, 0)
+  .to(["#steam1", "#steam3"], { y: -14, opacity: 0.4, duration: 0.8, repeat: loop(0.8), yoyo: true, ease: "sine.inOut" }, 0)
+  .to("#steam2", { y: -18, opacity: 0.5, duration: 1, repeat: loop(1), yoyo: true, ease: "sine.inOut" }, 0.3)
+  .to("#lk-head", { y: -4, duration: 1.1, repeat: loop(1.1), yoyo: true, ease: "sine.inOut" }, 0)
+  .to("#ck-head", { y: -4, duration: 1.3, repeat: loop(1.3), yoyo: true, ease: "sine.inOut" }, 0.4);
+
+/* ------------------------------ story ------------------------------ */
+// 0 - cold open on the broken site
+tl.to("#fade", { opacity: 0, duration: 0.5 }, 0);
+caption("your website rn:", 0.3, 1.3);
+
+// 1.3 - they drop in from the URL bar
+fall("lk", 330, 1.3);
+sfx("THUD", 330, 1060, 1.78, { size: 52, rot: -10 });
+fall("ck", 770, 1.95, 0.42);
+
+// 2.6 - looking around
+tl.to("#lk-face", { x: -14, duration: 0.18 }, 2.7).to("#lk-face", { x: 12, duration: 0.18 }, 3.15).to("#lk-face", { x: 0, duration: 0.18 }, 3.6)
+  .to("#ck-head", { ...O, rotation: -10, duration: 0.25 }, 2.7).to("#ck-head", { ...O, rotation: 8, duration: 0.25 }, 3.15).to("#ck-head", { ...O, rotation: 0, duration: 0.2 }, 3.6)
+  .to("#lk-brows", { y: 5, duration: 0.15 }, 3.2);
+mouth("ck", "o", 3.2);
+sfx("?!", 840, 1040, 3.2, { size: 70, rot: 10 });
+caption("oh no.", 3.2, 4.2);
+
+// 3.9 - a look between them, a nod
+tl.to("#lk-face", { x: 12, duration: 0.15 }, 3.9).to("#ck-face", { x: -10, duration: 0.15 }, 3.9)
+  .to("#lk-head", { ...O, rotation: 7, duration: 0.12, yoyo: true, repeat: 3 }, 4.15)
+  .to("#lk-face", { x: -12, duration: 0.15 }, 4.75).to("#ck-face", { x: 0, duration: 0.15 }, 4.75);
+mouth("ck", "smirk", 4.0);
+caption("we got this.", 4.3, 5.9);
+
+// 4.9 - kicks the fallen nav back to the top, hands still in pockets
+tl.to("#lk-pose", { ...O, rotation: 6, duration: 0.15 }, 4.85)
+  .to("#lk-legL", { ...O, rotation: 30, duration: 0.15 }, 4.85)
+  .to("#lk-legL", { ...O, rotation: -10, duration: 0.08, ease: "power4.in" }, 5.0)
+  .to("#lk-legL", { ...O, rotation: 72, duration: 0.1, ease: "power4.out" }, 5.08)
+  .to(["#lk-legL", "#lk-pose"], { ...O, rotation: 0, duration: 0.3, ease: "back.out(2)" }, 5.3);
+impact(270, 1390, 5.12, 70);
+sfx("THWACK", 230, 1270, 5.12, { size: 60, rot: -12 });
+tl.to("#nav", { x: 540, duration: 0.6, ease: "power2.out" }, 5.14)
+  .to("#nav", { y: 358, duration: 0.6, ease: "power3.out" }, 5.14)
+  .to("#navR", { ...O, rotation: 360, scale: 1, duration: 0.6, ease: "power2.out" }, 5.14)
+  .set("#navBroken", { opacity: 0 }, 5.74).set("#navClean", { opacity: 1 }, 5.74);
+impact(540, 360, 5.74, 120);
+shake("#browser", 5.74, 8);
+
+// 6.0 - the finger gun from the sketch: pew = redesign
+gun(true, 6.05);
+tl.to("#ck-armR", { ...O, rotation: 136, duration: 0.3, ease: "back.out(2)" }, 5.95)
+  .to("#ck-face", { x: -12, duration: 0.15 }, 6.0)
+  .to("#ck-armR", { ...O, rotation: 150, duration: 0.06, ease: "power4.out" }, 6.6)
+  .to("#ck-armR", { ...O, rotation: 136, duration: 0.3, ease: "elastic.out(1,0.4)" }, 6.66);
+mouth("ck", "grin", 6.6);
+land("ck", 6.6, 0.5);
+gunLines(706, 1070, 6.6, 0.6, -30);
+sfx("pew", 650, 1010, 6.6, { size: 72, rot: -18, color: ACCENT });
+tl.to("#revealC", { attr: { r: 1650 }, duration: 1.15, ease: "power2.in" }, 6.62);
+{
+  const ring = el("circle", { cx: 720, cy: 1110, r: 0, fill: "none", stroke: ACCENT, "stroke-width": 18, opacity: 0 });
+  tl.set(ring, { opacity: 0.9 }, 6.62).to(ring, { attr: { r: 1650, "stroke-width": 4 }, duration: 1.15, ease: "power2.in" }, 6.62).set(ring, { opacity: 0 }, 7.8);
+}
+tl.to("#ck-armR", { ...O, rotation: 4, duration: 0.3 }, 7.85).to("#ck-face", { x: 0, duration: 0.15 }, 7.85);
+gun(false, 8.0);
+mouth("ck", "smirk", 7.9);
+
+// 8.0 - one kick, three cards land in the grid
+walk("lk", 330, 470, 8.0, 0.6);
+tl.to("#lk-face", { x: 12, duration: 0.12 }, 8.0)
+  .to("#lk-legR", { ...O, rotation: -30, duration: 0.12 }, 8.65)
+  .to("#lk-legR", { ...O, rotation: 10, duration: 0.08, ease: "power4.in" }, 8.77)
+  .to("#lk-legR", { ...O, rotation: -78, duration: 0.1, ease: "power4.out" }, 8.85)
+  .to("#lk-legR", { ...O, rotation: 0, duration: 0.3, ease: "back.out(2)" }, 9.1);
+impact(550, 1380, 8.88, 70);
+[["#card1", 865, 8.9, 0.42, -360], ["#card2", 540, 9.12, 0.4, -360], ["#card3", 215, 9.32, 0.42, 360]].forEach(([c, x, t, d, spin]) => {
+  tl.to(c, { x, duration: d, ease: "power2.out" }, t)
+    .to(c, { y: 1062, duration: d, ease: "back.out(1.6)" }, t)
+    .to(`${c}R`, { ...O, rotation: spin, scale: 1, duration: d, ease: "power2.out" }, t)
+    .to(`${c}Broken`, { opacity: 0, duration: 0.1 }, t + d * 0.6)
+    .fromTo(`${c}Inner`, { ...O, scaleY: 0.86, scaleX: 1.08 }, { ...O, scaleY: 1, scaleX: 1, duration: 0.4, ease: "elastic.out(1,0.4)", immediateRender: false }, t + d);
+  impact(x, 1062, t + d, 150);
+});
+sfx("SNAP", 540, 920, 9.55, { size: 56, rot: 6 });
+
+// 9.2 - yoinks the construction tape
+tl.to("#ck-armL", { ...O, rotation: -150, duration: 0.2, ease: "back.out(2)" }, 9.2)
+  .to("#ck-face", { x: -8, duration: 0.12 }, 9.2)
+  .to("#ck-armL", { ...O, rotation: -40, duration: 0.18, ease: "power3.in" }, 9.5)
+  .to("#ck-armL", { ...O, rotation: -4, duration: 0.3 }, 9.75)
+  .to("#tape", { x: 1500, y: 300, duration: 0.6, ease: "power2.in" }, 9.5)
+  .to("#tapeR", { ...O, rotation: 220, duration: 0.6, ease: "power1.in" }, 9.5);
+sfx("YOINK", 860, 1020, 9.48, { size: 58, rot: 8 });
+mouth("ck", "grin", 9.5);
+
+// 10.4 - the cursor tries to drag him around
+tl.to("#lk-face", { x: 0, duration: 0.15 }, 10.0)
+  .set("#cursor", { opacity: 1 }, 10.3)
+  .to("#cursor", { x: 520, y: 1150, duration: 0.8, ease: "power2.inOut" }, 10.3)
+  .to("#cursorR", { ...O, scale: 0.85, duration: 0.08, yoyo: true, repeat: 1 }, 11.15)
+  .set("#selBox", { opacity: 1, attr: { x: 360, y: 1050, width: 220, height: 410 } }, 11.2)
+  .to("#lk", { y: FLOOR - 60, x: 540, duration: 0.5, ease: "power2.out" }, 11.25)
+  .to("#cursor", { x: 590, y: 1090, duration: 0.5, ease: "power2.out" }, 11.25)
+  .to("#selBox", { attr: { x: 430, y: 990 }, duration: 0.5, ease: "power2.out" }, 11.25)
+  .to("#lk-pose", { ...O, rotation: 8, duration: 0.3 }, 11.25)
+  .to("#lk-legL", { ...O, rotation: 10, duration: 0.2, yoyo: true, repeat: 3 }, 11.25)
+  .to("#lk-legR", { ...O, rotation: -10, duration: 0.2, yoyo: true, repeat: 3 }, 11.25)
+  // the glare
+  .to("#lk-face", { x: 12, duration: 0.1 }, 11.85)
+  .to(["#lk-pupilL", "#lk-pupilR"], { x: 4, y: -3, duration: 0.1 }, 11.85)
+  .to("#lk-brows", { y: 10, duration: 0.1 }, 11.85)
+  .set("#lk-vein", { opacity: 1 }, 11.85)
+  .fromTo("#lk-vein", { ...O, svgOrigin: "35 -100", scale: 0.4 }, { svgOrigin: "35 -100", scale: 1.15, duration: 0.15, yoyo: true, repeat: 5, immediateRender: false }, 11.85);
+sfx("!!", 600, 990, 11.9, { size: 80, rot: 12, color: ACCENT });
+shake("#cursor", 12.1, 8, 0.35);
+tl.set("#selBox", { opacity: 0 }, 12.45)
+  .to("#lk", { y: FLOOR, x: 540, duration: 0.25, ease: "power2.in" }, 12.45)
+  .to(["#lk-pose", "#lk-legL", "#lk-legR"], { ...O, rotation: 0, duration: 0.2 }, 12.45)
+  .to("#cursor", { x: 1200, y: 980, duration: 0.7, ease: "power2.in" }, 12.6)
+  .to("#cursorR", { ...O, scale: 0.6, duration: 0.7 }, 12.6)
+  .set("#cursor", { opacity: 0 }, 13.3);
+land("lk", 12.7, 0.8);
+dust(540, FLOOR, 12.7);
+mouth("ck", "grin", 12.6);
+tl.to("#ck-pose", { ...O, rotation: 4, duration: 0.08, yoyo: true, repeat: 7 }, 12.6);
+caption("no drag-and-drop here.", 12.6, 13.9);
+
+// 13.4 - polish pass
+tl.to("#shineBar", { x: 1600, duration: 0.8, ease: "power2.inOut" }, 13.3)
+  .to("#chartLine", { attr: { "stroke-dashoffset": 0 }, duration: 0.9, ease: "power2.out" }, 13.5)
+  .to("#chartArea", { opacity: 0.12, duration: 0.5 }, 14.0)
+  .set("#chip", { opacity: 1 }, 14.2)
+  .fromTo("#chip", { ...O, svgOrigin: "250 1355", scale: 0.4 }, { svgOrigin: "250 1355", scale: 1, duration: 0.35, ease: "back.out(3)", immediateRender: false }, 14.2)
+  .to("#lk-vein", { opacity: 0, duration: 0.2 }, 13.2)
+  .to("#lk-brows", { y: 0, duration: 0.2 }, 13.2)
+  .to(["#lk-pupilL", "#lk-pupilR"], { x: 0, y: 0, duration: 0.2 }, 13.2)
+  .to("#lk-face", { x: 0, duration: 0.2 }, 13.2);
+caption("...after Pause.", 13.9, 15.3);
+// signature finger gun to the viewer
+gun(true, 14.5);
+tl.to("#ck-armR", { ...O, rotation: -80, duration: 0.25, ease: "back.out(2.5)" }, 14.4);
+gunLines(980, 1240, 14.65, 0.7);
+tl.fromTo("#ck-glint", { opacity: 0 }, { opacity: 1, duration: 0.08, yoyo: true, repeat: 3, immediateRender: false }, 14.7);
+tl.to("#ck-armR", { ...O, rotation: 4, duration: 0.25 }, 15.2);
+gun(false, 15.4);
+
+// 15.4 - the pause button
+tl.set("#pauseBtn", { opacity: 1 }, 15.4)
+  .to("#pauseBtn", { y: 780, duration: 0.5, ease: "bounce.out" }, 15.4)
+  .to("#lk-face", { x: 8, duration: 0.15 }, 15.5)
+  .to(["#lk-pupilL", "#lk-pupilR"], { y: -5, duration: 0.15 }, 15.5);
+gun(true, 15.9);
+tl.to("#ck-armR", { ...O, rotation: 150, duration: 0.25, ease: "back.out(2)" }, 15.85)
+  .to("#ck-face", { x: -10, duration: 0.15 }, 15.85)
+  .to("#ck-armR", { ...O, rotation: 162, duration: 0.06 }, 16.25)
+  .to("#ck-armR", { ...O, rotation: 150, duration: 0.1 }, 16.31);
+gunLines(700, 1060, 16.25, 0.5, -35);
+sfx("pew", 640, 1000, 16.25, { size: 60, rot: -14, color: ACCENT, hold: 0.25 });
+tl.to("#pauseBtnR", { ...O, scale: 0.86, duration: 0.06 }, 16.3)
+  .to("#pauseBtnR", { ...O, scale: 1, duration: 0.05 }, 16.36);
+impact(540, 780, 16.3, 190, ACCENT);
+
+// 16.35 - FREEZE
+{
+  const flash = el("rect", { width: 1080, height: 1920, fill: "#fff", opacity: 0 }, svg);
+  svg.insertBefore(flash, $("#fade"));
+  tl.set(flash, { opacity: 0.85 }, FREEZE).to(flash, { opacity: 0, duration: 0.25 }, FREEZE + 0.02);
+}
+tl.set("#desatM", { attr: { values: 0.15 } }, FREEZE)
+  .set("#freezeUI", { opacity: 1 }, FREEZE);
+// ...but he can't help it: eyes to camera, tiny smirk
+tl.to("#lk-face", { x: 0, duration: 0.3 }, 17.1)
+  .to(["#lk-pupilL", "#lk-pupilR"], { x: 0, y: 0, duration: 0.3 }, 17.1);
+mouth("lk", "smirk", 17.4);
+caption("hit pause on bad websites.", 17.0, 18.55);
+
+// 18.6 - end card
+tl.to(["#scene", "#freezeUI"], { opacity: 0, duration: 0.3 }, 18.6)
+  .to("#cast", { opacity: 0, duration: 0.25 }, 18.6)
+  .fromTo("#endcard", { opacity: 0 }, { opacity: 1, duration: 0.25, immediateRender: false }, 18.85);
+{
+  const crown = $("#crownPath"), drip = $("#crownDrip");
+  const L = crown.getTotalLength(), D = 400;
+  tl.set(crown, { attr: { "stroke-dasharray": L, "stroke-dashoffset": L } }, 0)
+    .set(drip, { attr: { "stroke-dasharray": D, "stroke-dashoffset": D } }, 0)
+    .to(crown, { attr: { "stroke-dashoffset": 0 }, duration: 0.7, ease: "power2.inOut" }, 19.0)
+    .to(drip, { attr: { "stroke-dashoffset": 0 }, duration: 0.6, ease: "power1.in" }, 19.6)
+    .fromTo("#crown .dot", { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: 0.1 }, 19.7);
+}
+tl.from("#wordmark", { ...O, svgOrigin: "540 860", scale: 0.3, opacity: 0, duration: 0.45, ease: "back.out(2.2)" }, 19.4)
+  .from("#tagline", { opacity: 0, y: 20, duration: 0.4 }, 19.9)
+  .from("#ctaEnd", { ...O, svgOrigin: "540 1108", scale: 0.5, opacity: 0, duration: 0.4, ease: "back.out(2.5)" }, 20.4);
+
+// the sketch pose: locs front, hands in pockets; cap turned away, finger gun out
+tl.set("#cast", { opacity: 1 }, 19.5)
+  .set("#lk", { x: 390, y: -700 }, 19.5).set("#ck", { x: 700, y: -700 }, 19.5)
+  .set(["#lk-pose", "#ck-pose"], { ...O, scale: 1.3, rotation: 0 }, 19.5)
+  .set(["#lk-armL", "#ck-armL"], { ...O, rotation: -4 }, 19.5)
+  .set("#lk-armR", { ...O, rotation: 4 }, 19.5)
+  .set("#lk-face", { x: -6 }, 19.5)
+  .set("#lk-brows", { y: 5 }, 19.5)
+  .set(["#ck-front", "#ck-headFront"], { opacity: 0 }, 19.5)
+  .set(["#ck-back", "#ck-headBack"], { opacity: 1 }, 19.5)
+  .set("#ck-armR", { ...O, rotation: -84 }, 19.5);
+mouth("lk", "frown", 19.5);
+gun(true, 19.5);
+tl.to("#lk", { y: 1780, duration: 0.4, ease: "power2.in" }, 20.6)
+  .to("#ck", { y: 1780, duration: 0.4, ease: "power2.in" }, 20.8);
+land("lk", 21.0, 1.1); dust(390, 1780, 21.0);
+land("ck", 21.2, 1.1); dust(700, 1780, 21.2);
+gunLines(1000, 1450, 21.45, 2.4);
+tl.to("#ck-armR", { ...O, rotation: -90, duration: 0.06, yoyo: true, repeat: 1 }, 21.45);
+tl.to("#lk-head", { y: -4, duration: 1.1, repeat: 1, yoyo: true, ease: "sine.inOut" }, 21.4)
+  .to("#ck-head", { y: -4, duration: 1.2, repeat: 1, yoyo: true, ease: "sine.inOut" }, 21.6)
+  .to({}, { duration: 0.01 }, DURATION - 0.01);
+
+/* ------------------------------ playback ------------------------------ */
+const noise = document.getElementById("pencilNoise");
+function boil(t) { noise.setAttribute("seed", 1 + (Math.floor(t * 8) % 4)); }
+window.renderAt = (t) => { tl.time(t, false); boil(t); };
+window.DURATION = DURATION;
+
+const params = new URLSearchParams(location.search);
+const btn = $("#play"), scrub = $("#scrub"), clock = $("#clock");
+let playing = false, last = 0, now = 0;
+function frame(ts) {
+  if (playing) {
+    now += (ts - last) / 1000;
+    if (now >= DURATION) now = 0;
+    renderAt(now);
+    scrub.value = Math.round((now / DURATION) * 1000);
+    clock.textContent = now.toFixed(1) + "s";
+  }
+  last = ts;
+  requestAnimationFrame(frame);
+}
+function setPlaying(p) { playing = p; btn.textContent = p ? "Pause" : "Play"; }
+btn.onclick = () => setPlaying(!playing);
+svg.onclick = () => setPlaying(!playing);
+scrub.oninput = () => { setPlaying(false); now = (scrub.value / 1000) * DURATION; renderAt(now); clock.textContent = now.toFixed(1) + "s"; };
+
+window.ready = document.fonts.ready.then(() => {
+  if (params.has("render")) { document.body.classList.add("render"); renderAt(+params.get("t") || 0); return; }
+  renderAt(0); setPlaying(true); requestAnimationFrame((ts) => { last = ts; frame(ts); });
+});
+</script>
+</body>
+</html>
