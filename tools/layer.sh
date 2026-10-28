@@ -14,16 +14,18 @@
 # Placement env vars (defaults fit the test1 street layout):
 #   KEY=0x00A646  key colour     CH=1168  character layer height
 #   X=214 Y=655   layer top-left SHADOW=0.55  shadow opacity
+#   PLATE_FPS     force the world's own frame rate, e.g. 12 for stop-motion
 set -euo pipefail
 PLATE=$1 CHARS=$2 OUT=$3
 GRADE=${4:-"eq=contrast=1.03:brightness=-0.03:saturation=0.9"}
 DUR=${5:-8}
 KEY=${KEY:-0x00A646} CH=${CH:-1168} X=${X:-214} Y=${Y:-655} SHADOW=${SHADOW:-0.55}
+PLATE_RATE=${PLATE_FPS:+fps=$PLATE_FPS,}
 
 ffmpeg -nostdin -y -loglevel error \
   -i "$PLATE" -i "$CHARS" \
   -filter_complex "
-    [0:v]scale=-2:1920:flags=lanczos,crop=1080:1920,setsar=1,fps=60[bg];
+    [0:v]${PLATE_RATE}scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1,fps=60[bg];
     [1:v]chromakey=$KEY:0.13:0.05,format=rgba,split[k1][k2];
     [k2]alphaextract,erosion,erosion,gblur=sigma=0.7[ka];
     [k1][ka]alphamerge,
