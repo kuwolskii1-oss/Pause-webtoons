@@ -21,7 +21,7 @@ Original design: **Kim's pencil sketch**, `refs/kim-sketch-original.jpg`. It's t
 ### Decided
 - No logos or text on any clothes, ever. The original CiSK + cross is dropped.
 - Goatee: yes. Eyes: visible under the brim.
-- Working references: the `chars2` round (in progress) replaces `chars1` for Kuwolskii.
+- Working references: `refs/chars2/`. Kuwolskii: `chars2-kuw-turn-2` (cap forward in every view), `chars2-kuw-outfits-1`, `chars2-kuw-expr-2`. Kolurin: `chars2-kol-turn-1`, `chars2-kol-outfits-1`.
 
 ## Rules in every universe
 - **The characters animate at 20 fps**: held frames, like hand-drawn animation, whatever world they're in. The world (footage, props, UI, camera moves) runs at its own frame rate. In code, `lib/timeline.js` enforces this. Final renders are 60 fps, so each character pose is held for exactly 3 frames.
