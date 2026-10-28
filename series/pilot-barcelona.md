@@ -7,8 +7,8 @@
 Kolurin and Kuwolskii live in a pencil-sketch cartoon universe: their studio, the main base. When a client's website is stuck, the Pause button starts to glow (our magic key) and pulls them into another reality. There they fully exist in that world's look and physics, and they pick up a design lesson along the way. The button pulls them home, and they use what they learnt on the client's site.
 
 ## Cast
-- **Kolurin**: locs, CISK button-up, hands in pockets, deadpan, unimpressed by almost everything. Does the physical work (kicks things into place). Very hard to impress, so the moment he finally is impressed matters.
-- **Kuwolskii**: cap, CISK hoodie, cargo pants. Playful, always first to touch things. Signature move: the finger gun with "///" lines. His "pew" sets off the magic.
+- **Kolurin**: locs, button-up, hands in pockets, deadpan, unimpressed by almost everything. Does the physical work (kicks things into place). Very hard to impress, so the moment he finally is impressed matters.
+- **Kuwolskii**: cap, goatee, hoodie, cargo pants. Playful, always first to touch things. Signature move: the finger gun with "///" lines. His "pew" sets off the magic.
 
 ## Look rules
 - **Base (cartoon universe):** pencil on cream sketchbook paper, wobbly lines, monochrome with one accent colour (Pause red).
