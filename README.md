@@ -12,4 +12,5 @@ Direction: a grounded, sitcom-style series. Scenes are filmed or generated with 
 - `series/pilot-barcelona.md` - pilot script: Kolurin (locs) and Kuwolskii (cap) in real-life Barcelona, plus the footage shot list.
 - `tools/composite.js` - draws an animated cartoon shot on a transparent layer and lays it over a real video plate: `node tools/composite.js <shot.html> <plate.mp4> <out.mp4>`.
 - `episodes/pilot-barcelona/` - pilot shots; `shot-01-tiles` is the first cartoon-over-video test (Veo clip from Google Flow).
+- `tools/pause-browser/` - Pause Browser, our own Browserbase: a real Chrome on a home computer with its own profile, reachable from any session through a tunnel and a secret key. See its README.
 - `tools/rig-preview.html` - both rigs side by side, including the back-view pose from the sketch.
