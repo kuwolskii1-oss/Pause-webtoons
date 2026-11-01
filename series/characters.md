@@ -20,7 +20,10 @@ Original design: **Kim's pencil sketch**, `refs/kim-sketch-original.jpg`. It's t
 ### Decided
 - No logos or text on any clothes, ever. The original CiSK + cross is dropped.
 - Goatee: yes. Eyes: visible under the brim.
-- Working references: **faces from `refs/chars1/`** (preferred for both): Kolurin `chars1-kol-turn-1` and `chars1-kol-expr-2`; Kuwolskii `chars1-kuw-turn-1` and `chars1-kuw-face-2`. From `refs/chars2/` keep only Kuwolskii's goatee, the no-logo clothes and the outfit tests (`chars2-kuw-turn-2`, `chars2-kol-outfits-1`, `chars2-kuw-outfits-1`).
+- Working references (Kim-style, teen proportions; these win over everything else):
+  - **Kuwolskii's face:** `refs/kuwface1/kuwface1-1.jpg`, using the *full front view*, *talking* and *laughing* panels (in *smirk* and the middle figure his cap is backwards).
+  - **Kolurin's face:** the left boy in `plates/kf2/kf2-start-2.jpg`, plus Kim's original sketch.
+  - Older sheets (`refs/chars1/`, `refs/chars2/`) are for turnarounds and outfits only; their faces drift adult.
 
 ## Tone and production (decided)
 - **A grounded, mature, sitcom-style series.** Humour comes from character, dialogue and situations, not slapstick or snappy cartoon timing.
