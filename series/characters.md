@@ -22,9 +22,11 @@ Original design: **Kim's pencil sketch**, `refs/kim-sketch-original.jpg`. It's t
 - Goatee: yes. Eyes: visible under the brim.
 - Working references: **faces from `refs/chars1/`** (preferred for both): Kolurin `chars1-kol-turn-1` and `chars1-kol-expr-2`; Kuwolskii `chars1-kuw-turn-1` and `chars1-kuw-face-2`. From `refs/chars2/` keep only Kuwolskii's goatee, the no-logo clothes and the outfit tests (`chars2-kuw-turn-2`, `chars2-kol-outfits-1`, `chars2-kuw-outfits-1`).
 
-## Rules in every universe
-- **The characters animate at 20 fps**: held frames, like hand-drawn animation, whatever world they're in. The world (footage, props, UI, camera moves) runs at its own frame rate. In code, `lib/timeline.js` enforces this. Final renders are 60 fps, so each character pose is held for exactly 3 frames.
-- Kim's pencil look is home base. In other universes they take on that world's light and shadows (and later maybe its style), but stay recognisably these two.
+## Tone and production (decided)
+- **A grounded, mature, sitcom-style series.** Humour comes from character, dialogue and situations, not slapstick or snappy cartoon timing.
+- **Production approach: replacement.** Scenes are filmed (or generated) with real people as stand-ins, then the stand-ins are replaced with Kolurin and Kuwolskii, so the characters inherit real lighting, shadows, occlusion, camera moves, acting and lip sync. Best case: the team films themselves performing the dialogue.
+- **The 20 fps rule is retired.** The characters move at the footage's natural frame rate so they blend in. `lib/timeline.js` and `tools/snap.py` remain for stylised moments.
+- Kim's pencil look is home base (the studio). In other places they are lit by that world but stay recognisably these two.
 
 ## Outfits
 No logos on clothing, so the two aren't tied to one outfit. They can dress for each universe and episode. What stays fixed is the face, hair, build and habits: Kolurin's locs, fade, brows and hands in pockets; Kuwolskii's cap, locs, goatee and finger gun.

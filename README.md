@@ -1,7 +1,7 @@
 # Pause-webtoons
 Animation skill: short vertical (1080x1920) marketing animations for Pause, starring Kolurin and Kuwolskii (see `series/characters.md`).
 
-Rule: the characters always animate at 20 fps; the world around them runs at its own frame rate (`lib/timeline.js`).
+Direction: a grounded, sitcom-style series. Scenes are filmed or generated with stand-ins who are then replaced by the characters (see `series/characters.md`).
 
 - `lib/characters.js` - SVG rigs for both characters (Kolurin: locs, button-up; Kuwolskii: cap, hoodie), with joints you can animate.
 - `lib/timeline.js` - two-speed GSAP timeline: rig parts step at 20 fps, everything else is smooth.
