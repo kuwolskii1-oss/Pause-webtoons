@@ -18,6 +18,13 @@ Kolurin and Kuwolskii run Pause, a web design studio. Each episode they travel i
 - Line: *"We pause the moment you love, step inside, and bring it back as your brand."*
 
 ## Production
-- **Replacement workflow:** generate a live-action (or any-style) scene with stand-ins, then replace the stand-ins with Kolurin and Kuwolskii, so they inherit the scene's lighting, shadows, occlusion and camera. See `series/characters.md`.
+- **Main method, keyframe-first:**
+  1. Generate each shot's **start keyframe** as a still with human stand-ins (location, light, camera).
+  2. **Swap the stand-ins for Kolurin and Kuwolskii in the still** (image edit with the character sheets). It's cheap, so redo it until they're on-model; they inherit the photo's perspective, lighting and shadows.
+  3. Make the **end keyframe** the same way (same camera, a few seconds later). Add a middle keyframe for big changes.
+  4. Generate the video **between the keyframes** (start + end frame in Kling, Veo 3.1 "Frames to Video" in Flow, or Wan), with the character sheets as reference images.
+  5. **Chain shots:** the end keyframe of one shot is the start of the next, so the characters can't drift over an episode.
+  Keep shots about 4–8 s, and keep the keyframes of a shot close (same camera, natural change), or the model morphs instead of animating.
+- **Backup method, video replacement:** generate a live-action (or any-style) scene with stand-ins, then replace the stand-ins with Kolurin and Kuwolskii, so they inherit the scene's lighting, shadows, occlusion and camera. See `series/characters.md`.
 - Generators: the Kie relay (many models via one account, credits) and Google Flow (free daily credits through the team's own browser, using the Claude in Chrome extension or the desktop app's built-in browser).
 - Every episode ends with the **Pause trademark ending** (`tools/append-endcard.sh`), to be converted to 16:9.
